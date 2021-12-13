@@ -3,6 +3,7 @@ const got = require('got')
 const Form = require('form-data')
 const readline = require('readline')
 const rl = readline.createInterface(process.stdin, process.stdout)
+console.clear()
 
 rl.question('Token? ', token => {
   if (token === '') {
@@ -45,15 +46,18 @@ rl.question('Token? ', token => {
         const message = caption
           .replace('{{index}}', `${uploads.indexOf(upload) + 1}`)
           .replace('{{length}}', `${uploads.length}`)
+        const snowflake = (+new Date - 1420070400000) * (2**22);
         const start = new Date()
         const data = new Form()
         data.append('file', fs.createReadStream(`./Input/${upload}`))
-        data.append('payload_json', `{"content":"${message}","tts":false}`)
+        data.append('payload_json', `{"content":"${message}","tts":false,"nonce":"${snowflake}"}`)
         const res = await got.post(
           `https://discord.com/api/v9/channels/${cid}/messages`,
           {
             body: data,
-            retry: 5,
+            responseType: 'json',
+            resolveBodyOnly: true,
+            throwHttpErrors: false,
             headers: {
               authorization: token,
               'user-agent':
@@ -61,16 +65,11 @@ rl.question('Token? ', token => {
             }
           }
         )
-        if (res.statusCode === 200) {
-          const end = new Date() - start
-          console.log(
-            `[UPLOADED ${uploads.indexOf(upload) + 1}/${
-              uploads.length
-            }] (${end / 1000} sec.) ${upload} `
-          )
+        if (res.code === 40005) {
+          console.log(`[${uploads.indexOf(upload) + 1}/${uploads.length}] File too large... ${upload}`)
         } else {
-          console.log('Something wrong when uploading...')
-          console.log(res)
+          const end = new Date() - start
+          console.log(`[${uploads.indexOf(upload) + 1}/${uploads.length}] OK (${end / 1000} sec.) ${upload}`)
         }
       }
       process.exit(0)
