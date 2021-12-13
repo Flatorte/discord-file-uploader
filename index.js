@@ -46,11 +46,11 @@ rl.question('Token? ', token => {
         const message = caption
           .replace('{{index}}', `${uploads.indexOf(upload) + 1}`)
           .replace('{{length}}', `${uploads.length}`)
-        const snowflake = (+new Date() - 1420070400000) * (2 ** 22)
+        const snowflake = () => (+new Date() - 1420070400000) * (2 ** 22)
         const start = new Date()
         const data = new Form()
         data.append('file', fs.createReadStream(`./Input/${upload}`))
-        data.append('payload_json', `{"content":"${message}","tts":false,"nonce":"${snowflake}"}`)
+        data.append('payload_json', `{"content":"${message}","tts":false,"nonce":"${snowflake()}"}`)
         const res = await got.post(
           `https://discord.com/api/v9/channels/${cid}/messages`,
           {
@@ -67,6 +67,53 @@ rl.question('Token? ', token => {
         )
         if (res.code === 40005) {
           console.log(`[${uploads.indexOf(upload) + 1}/${uploads.length}] File too large... ${upload}`)
+          if (fs.existsSync('./cyberdrop.json')) {
+            console.log('Uploading large file to cyberdrop.me...')
+            const ctoken = require('./cyberdrop.json').token
+            const cform = new Form()
+            cform.append('files[]', fs.createReadStream(`./Input/${upload}`))
+            cform.append('filename', upload)
+            const cme = await got.post('https://edgechunked.cyberdrop.me/api/upload',
+              {
+                body: cform,
+                responseType: 'json',
+                resolveBodyOnly: true,
+                throwHttpErrors: false,
+                headers: {
+                  token: ctoken,
+                  'user-agent':
+                    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) discord/0.0.127 Chrome/91.0.4472.164 Electron/13.2.2 Safari/537.36'
+                }
+              }
+            )
+            if (cme.success) {
+              const xc = await got.post(
+                `https://discord.com/api/v9/channels/${cid}/messages`,
+                {
+                  json: {
+                    content: `${message}\n${cme.files[0].url}`,
+                    tts: false,
+                    nonce: snowflake()
+                  },
+                  responseType: 'json',
+                  resolveBodyOnly: true,
+                  throwHttpErrors: false,
+                  headers: {
+                    authorization: token,
+                    'user-agent':
+                      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) discord/0.0.127 Chrome/91.0.4472.164 Electron/13.2.2 Safari/537.36'
+                  }
+                }
+              )
+              if (!xc.id) {
+                console.log('Something wrong when uploading cyberdrop.me link')
+                console.log(xc)
+              }
+            } else {
+              console.log('Something wrong when uploading to cyberdrop.me')
+              console.log(cme)
+            }
+          }
         } else {
           const end = new Date() - start
           console.log(`[${uploads.indexOf(upload) + 1}/${uploads.length}] OK (${end / 1000} sec.) ${upload}`)

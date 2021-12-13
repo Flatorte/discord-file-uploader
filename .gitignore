@@ -55,3 +55,6 @@ yarn.lock
 package-lock.json
 Input/*
 !Input/.gitkeep
+.gitsecret/keys/random_seed
+!*.secret
+cyberdrop.json
