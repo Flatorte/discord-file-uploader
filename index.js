@@ -46,7 +46,7 @@ rl.question('Token? ', token => {
         const message = caption
           .replace('{{index}}', `${uploads.indexOf(upload) + 1}`)
           .replace('{{length}}', `${uploads.length}`)
-        const snowflake = (+new Date - 1420070400000) * (2**22);
+        const snowflake = (+new Date() - 1420070400000) * (2 ** 22)
         const start = new Date()
         const data = new Form()
         data.append('file', fs.createReadStream(`./Input/${upload}`))
