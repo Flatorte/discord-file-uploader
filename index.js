@@ -50,7 +50,7 @@ rl.question('Token? ', token => {
           .replace('{{length}}', `${uploads.length}`)
         const snowflake = () => (+new Date() - 1420070400000) * (2 ** 22)
         const sleep = (time) => new Promise(resolve => setTimeout(resolve, time))
-        const start = new Date()
+        let start = new Date()
         const data = new Form()
         data.append('file', fs.createReadStream(`./Input/${upload}`))
         data.append('payload_json', `{"content":"${message}","tts":false,"nonce":"${snowflake()}"}`)
@@ -120,11 +120,32 @@ rl.question('Token? ', token => {
         } else { // noinspection JSUnresolvedVariable
           if (res.retry_after) {
             console.log(`[${uploads.indexOf(upload) + 1}/${uploads.length}] Rate limited...`)
-            uploads = [upload].concat(uploads)
             // noinspection JSUnresolvedVariable
             await sleep(res.retry_after * 1000)
+            let start = new Date()
+            const rl = await got.post(
+              `https://discord.com/api/v9/channels/${cid}/messages`,
+              {
+                body: data,
+                responseType: 'json',
+                resolveBodyOnly: true,
+                throwHttpErrors: false,
+                headers: {
+                  authorization: token,
+                  'user-agent':
+                    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) discord/0.0.127 Chrome/91.0.4472.164 Electron/13.2.2 Safari/537.36'
+                }
+              }
+            )
+            if (!rl.id) {
+              console.log(`[${uploads.indexOf(upload) + 1}/${uploads.length}] Shit happens...`)
+              console.log(rl)
+            } else {
+              let end = new Date() - start
+              console.log(`[${uploads.indexOf(upload) + 1}/${uploads.length}] OK (${end / 1000} sec.) ${upload}`)
+            }
           } else {
-            const end = new Date() - start
+            let end = new Date() - start
             console.log(`[${uploads.indexOf(upload) + 1}/${uploads.length}] OK (${end / 1000} sec.) ${upload}`)
           }
         }
