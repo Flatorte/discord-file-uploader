@@ -1,3 +1,5 @@
+// noinspection SpellCheckingInspection
+
 const fs = require('fs')
 const got = require('got')
 const Form = require('form-data')
@@ -18,7 +20,7 @@ rl.question('Token? ', token => {
     rl.question('Caption? ', async caption => {
       const files = fs.readdirSync('./Input/')
       let count = 0
-      const uploads = []
+      let uploads = []
       for (let i = 0; i < files.length; i++) {
         if (
           fs.statSync(`./Input/${files[i]}`).isDirectory() ||
@@ -47,6 +49,7 @@ rl.question('Token? ', token => {
           .replace('{{index}}', `${uploads.indexOf(upload) + 1}`)
           .replace('{{length}}', `${uploads.length}`)
         const snowflake = () => (+new Date() - 1420070400000) * (2 ** 22)
+        const sleep = (time) => new Promise(resolve => setTimeout(resolve, time))
         const start = new Date()
         const data = new Form()
         data.append('file', fs.createReadStream(`./Input/${upload}`))
@@ -114,9 +117,16 @@ rl.question('Token? ', token => {
               console.log(cme)
             }
           }
-        } else {
-          const end = new Date() - start
-          console.log(`[${uploads.indexOf(upload) + 1}/${uploads.length}] OK (${end / 1000} sec.) ${upload}`)
+        } else { // noinspection JSUnresolvedVariable
+          if (res.retry_after) {
+            console.log(`[${uploads.indexOf(upload) + 1}/${uploads.length}] Rate limited...`)
+            uploads = [upload].concat(uploads)
+            // noinspection JSUnresolvedVariable
+            await sleep(res.retry_after * 1000)
+          } else {
+            const end = new Date() - start
+            console.log(`[${uploads.indexOf(upload) + 1}/${uploads.length}] OK (${end / 1000} sec.) ${upload}`)
+          }
         }
       }
       process.exit(0)
