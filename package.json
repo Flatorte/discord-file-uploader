@@ -2,7 +2,7 @@
   "name": "discord-file-uploader",
   "version": "1.0.0",
   "main": "index.js",
-  "license": "MIT",
+  "license": "WTFPL",
   "dependencies": {
     "form-data": "^4.0.0",
     "got": "11.8.3"
