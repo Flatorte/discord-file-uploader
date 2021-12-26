@@ -54,7 +54,7 @@ const load = async () => {
 const uploadDiscord = async ({ file, message, cyberdrop }) => {
   const caption = message.replace('{{index}}', String(data.files?.indexOf(file) + 1)).replace('{{length}}', String(data.files.length))
   const snowflake = () => (+new Date() - 1420070400000) * (2 ** 22)
-  const sleep = (time) => new Promise(resolve => setTimeout(resolve, time))
+  const sleep = (time) => new Promise(resolve => setTimeout(resolve, time * 1000))
   const start = new Date()
   let uploadData
   if (cyberdrop) {
